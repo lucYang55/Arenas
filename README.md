@@ -51,6 +51,9 @@ The current implementation bootstraps the arena with a single `malloc` call. The
 
 The public API (`arena_push`, `arena_pop`, `arena_clear`, etc.) stays the same regardless of the backing allocator — only `create_arena` and `destroy_arena` need to change.
 
+## Test File 
+- To test the code I had Claude Code create a arena_test file to ensure that the arena is properly pushing and popping data. 
+
 References:
 
 https://www.youtube.com/watch?v=jgiMagdjA1s&t=543s 
