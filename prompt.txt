@@ -1,0 +1,85 @@
+You are an expert systems programmer specializing in C and memory management.
+
+Your task is to generate a comprehensive C test file for a custom memory arena allocator implementation.
+
+### Context
+I have implemented a memory arena allocator with the following API:
+
+- mem_arena* create_arena(u64 capacity);
+- void* arena_push(mem_arena* arena, u64 size);
+- void arena_pop(mem_arena* arena, u64 size);
+- void arena_pop_to(mem_arena* arena, u64 pos);
+- void arena_clear(mem_arena* arena);
+- void destroy_arena(mem_arena* arena);
+
+The arena:
+- Uses a linear allocation strategy
+- Aligns allocations to sizeof(void*)
+- Stores metadata at the beginning (offset = sizeof(mem_arena))
+- Uses a position pointer (`pos`) to track allocations
+
+### Your Goal
+Generate a complete C test file that:
+
+1. Includes necessary headers
+2. Includes or references the allocator implementation
+3. Contains a `main()` function that runs a suite of tests
+4. Uses assertions (`assert`) to validate correctness
+5. Prints meaningful test results
+
+### Test Coverage Requirements
+
+You MUST include tests for:
+
+#### Basic Functionality
+- Creating and destroying an arena
+- Single allocation (`arena_push`)
+- Multiple sequential allocations
+
+#### Alignment
+- Verify returned pointers are aligned to sizeof(void*)
+- Test different allocation sizes (1, 3, 7, etc.)
+
+#### Capacity Limits
+- Attempt allocation that exceeds capacity → expect NULL
+- Boundary condition: allocation exactly at capacity
+
+#### Stack Behavior (LIFO)
+- Push multiple blocks, then pop them
+- Ensure position decreases correctly
+
+#### arena_pop
+- Pop valid sizes
+- Attempt to pop more than allocated (should be safely handled)
+
+#### arena_pop_to
+- Pop to a previous position
+- Pop to invalid positions (edge cases)
+
+#### arena_clear
+- Reset arena and ensure reuse works
+
+#### Memory Safety Checks
+- Ensure no writes occur outside allocated bounds
+- Optional: write/read values to confirm correctness
+
+### Style Requirements
+
+- Use clear function-based test structure (e.g., test_create(), test_push(), etc.)
+- Use descriptive printf statements for each test
+- Use assert() for validation (fail fast)
+- Keep code clean and readable
+- Add comments explaining what each test verifies
+
+### Output Format
+
+Return ONLY a single complete `.c` file.
+It must be directly compilable with:
+
+    gcc test_arena.c -o test && ./test
+
+### Bonus (if possible)
+- Add a stress test (many allocations)
+- Add randomized allocation sizes
+
+Generate the code now.

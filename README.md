@@ -49,6 +49,7 @@ The current implementation bootstraps the arena with a single `malloc` call. The
 
 ## Test File 
 - To test the code I had Claude Code create a arena_test file to ensure that the arena is properly pushing and popping data. 
+- The prompt to generate the test file can be found in the prompt.txt file.
 
 References:
 

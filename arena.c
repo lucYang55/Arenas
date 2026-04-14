@@ -80,7 +80,7 @@ void arena_pop_to(mem_arena* arena, u64 pos){
 
 void arena_clear(mem_arena* arena){
     // clear all the data to the offset 
-    arena_pop(arena, ARENA_OFFSET);
+    arena_pop_to(arena, ARENA_OFFSET);
 }
 
 void destroy_arena(mem_arena* arena){
