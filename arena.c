@@ -18,7 +18,6 @@ typedef uint64_t u64;
 #define ARENA_OFFSET (sizeof(mem_arena))
 // this gives us the size of a void pointer 8 bytes
 #define ARENA_ALIGN (sizeof(void*))
-
 // helper macro to align the size to what size we want ie 8 bytes 
 #define ALIGN_POW2(size, align) (((size) + (align) - 1) & ~((align) - 1))
 
@@ -49,10 +48,8 @@ void* arena_push(mem_arena* arena, u64 size){
     u64 pos_to_align = ALIGN_POW2(size, ARENA_ALIGN);
     // set the new pos to the pos to align + the current arena pos 
     u64 new_pos = pos_to_align + arena->pos;
-
     // ERROR check to see if the new pos exceeds the arena size 
     if(new_pos > arena->total_capacity){return NULL;}
-
     // this will give us the output pointer of the current pos 
     // this takes the arena size which is the pointer to the start of the arena directly and cast it to a u8
     // this ensures that we can perform the correct pointer arithmetic + the pos to align 
