@@ -43,13 +43,9 @@ All sizes are rounded up to the next multiple of 8 (`ALIGN_POW2`) so every alloc
 
 ## Planned: Removing `malloc` / `free`
 
-The current implementation bootstraps the arena with a single `malloc` call. The goal is to replace this with a lower-level memory source that doesn't rely on the C runtime heap at all. Options under consideration:
+The current implementation bootstraps the arena with a single `malloc` call. The goal is to replace this with a lower-level memory source that doesn't rely on the C runtime heap at all. 
 
 - **`mmap` / `VirtualAlloc`** — ask the OS directly for a page-aligned region. No heap overhead, the OS gives back physical pages lazily as they are touched. On Linux/macOS: `mmap(NULL, capacity, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0)`. Freeing becomes `munmap`.
-- **Static / stack buffer** — embed the backing buffer as a `static` array or a stack-local array and overlay the `mem_arena` header on top of it. Zero allocation cost; useful for small, fixed-size scratch arenas.
-- **OS virtual memory with commit-on-demand** — reserve a large virtual address range upfront (cheap) and only commit physical pages as `pos` crosses into new pages, keeping RSS low until the memory is actually needed.
-
-The public API (`arena_push`, `arena_pop`, `arena_clear`, etc.) stays the same regardless of the backing allocator — only `create_arena` and `destroy_arena` need to change.
 
 ## Test File 
 - To test the code I had Claude Code create a arena_test file to ensure that the arena is properly pushing and popping data. 
