@@ -1,1 +1,7 @@
 *.o
+*.out
+*.exe
+*_bin
+arena
+arena_test
+build
