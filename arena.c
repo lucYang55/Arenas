@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <assert.h>
 #include <stdbool.h>
+#include <unistd.h>
+#include <sys/mman.h>
 
 typedef int8_t i8;
 typedef int16_t i16;
@@ -14,6 +16,7 @@ typedef uint16_t u16;
 typedef uint32_t u32;
 typedef uint64_t u64;
 
+#define ONE_MB (1024 * 1024)
 // the initial offset of the size of a mem_arena 16 bytes 
 #define ARENA_OFFSET (sizeof(mem_arena))
 // this gives us the size of a void pointer 8 bytes
@@ -24,6 +27,9 @@ typedef uint64_t u64;
 typedef struct{
     u64  total_capacity;
     u64  pos;
+    u64 committed; 
+    u64 page_size; 
+    
 }mem_arena;
 
 mem_arena* create_arena(u64 total_capacity);
@@ -33,12 +39,50 @@ void arena_pop_to(mem_arena* arena, u64 size);
 void arena_clear(mem_arena* arena);
 void destroy_arena(mem_arena* arena);
 
+u64 get_page_size();
+void* reserve_mem(u64 size);
+bool commit_mem(void* ptr, u64 size);
+bool decommit_mem(void* ptr, u64 size);
+bool release_mem(void* ptr, u64 size);
+
+u64 get_page_size(){
+    // get the size of the page for a specific system 
+    return (u64)sysconf(_SC_PAGESIZE); 
+}
+
+void* reserve_mem(u64 size){
+    // we have reserved the amount of memory we would like to keep for our arena now using mmap 
+    void* ptr = mmap(NULL, size, PROT_NONE,MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    // return the ptr or return NULL if mmap failed 
+    return (ptr == MAP_FAILED) ? NULL : ptr; 
+}
+
+bool commit_mem(void* ptr, u64 size){
+    // take the ptr of data we have allocated and commit the size we want to use
+    return mprotect(ptr,size, PROT_READ | PROT_WRITE) == 0;
+}
+
+bool decommit_mem(void* ptr, u64 size){
+    mprotect(ptr, size, PROT_NONE);
+    return madvise(ptr, size, MADV_DONTNEED) == 0;
+}
+
+bool release_mem(void* ptr, u64 size){
+    return munmap(ptr, size) == 0;
+}
+
 mem_arena* create_arena(u64 capacity){
-    mem_arena *arena = (mem_arena*)malloc(sizeof(mem_arena) + capacity);
-    if (arena == NULL) {return NULL;} 
-    
+    void* block = reserve_mem(capacity);
+    if (!block) {return NULL;}
+
+    u64 page_size = get_page_size();
+    commit_mem(block, page_size);
+    mem_arena* arena = (mem_arena*)block; 
+
     arena->total_capacity = capacity;
     arena->pos = ARENA_OFFSET; 
+    arena->committed = page_size;
+    arena->page_size = page_size;
 
     return arena;
 }
@@ -53,9 +97,14 @@ void* arena_push(mem_arena* arena, u64 size){
     // this will give us the output pointer of the current pos 
     // this takes the arena size which is the pointer to the start of the arena directly and cast it to a u8
     // this ensures that we can perform the correct pointer arithmetic + the pos to align 
+    if (new_pos > arena->committed){
+        u64 commit_size = ALIGN_POW2(new_pos - arena->committed, arena->page_size);
+        commit_mem((u8*)arena + arena->committed, commit_size);
+        arena->committed += commit_size;
+    }
+
     u8* cur_pos = (u8*)arena + arena->pos;
     arena->pos = new_pos;
-    
     return cur_pos;
 }
 
@@ -79,10 +128,13 @@ void arena_pop_to(mem_arena* arena, u64 pos){
 }
 
 void arena_clear(mem_arena* arena){
-    // clear all the data to the offset 
-    arena_pop_to(arena, ARENA_OFFSET);
+    if (arena->committed > arena->page_size){
+        decommit_mem((u8*)arena + arena->page_size, arena->committed - arena->page_size);
+    }
+    arena->committed = arena->page_size;
+    arena->pos = ARENA_OFFSET;
 }
 
 void destroy_arena(mem_arena* arena){
-    free(arena);
+    release_mem(arena, arena->total_capacity);
 }
