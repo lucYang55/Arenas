@@ -34,6 +34,14 @@ The `mem_arena` struct is stored at the very beginning of the allocation itself 
 
 All sizes are rounded up to the next multiple of 8 (`ALIGN_POW2`) so every allocation is naturally aligned for any primitive type on 64-bit platforms.
 
+Reserve and Commit
+With an implementation using mmap and unmmap, I have added more flexibility in the way memory is allocated, with virtual memory being used upfront, and only allocating what memory we need currently to the arena 
+
+  - Reserve  →  claim virtual address space only (no RAM used)
+  - Commit   →  back that virtual space with actual physical RAM/swap
+  - Decommit →  give back the physical RAM, keep the virtual address
+  - Release  →  give back everything (virtual + physical)
+
 ## Why Use an Arena?
 
 - **Speed** — `arena_push` is essentially two additions and a comparison, no lock contention, no free-list traversal.
@@ -41,11 +49,11 @@ All sizes are rounded up to the next multiple of 8 (`ALIGN_POW2`) so every alloc
 - **Simple lifetime management** — if all the data you allocate belongs to the same logical lifetime (e.g., a single frame, a request, a parse tree), you free it all at once instead of tracking individual pointers.
 - **Cache friendly** — related objects end up next to each other in memory.
 
-## Planned: Removing `malloc` / `free`
+## Removing `malloc` / `free`
 
-The current implementation bootstraps the arena with a single `malloc` call. The goal is to replace this with a lower-level memory source that doesn't rely on the C runtime heap at all. 
+ //Completed The current implementation bootstraps the arena with a single `malloc` call. The goal is to replace this with a lower-level memory source that doesn't rely on the C runtime heap at all. 
 
-- **`mmap` / `VirtualAlloc`** — ask the OS directly for a page-aligned region. No heap overhead, the OS gives back physical pages lazily as they are touched. On Linux/macOS: `mmap(NULL, capacity, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0)`. Freeing becomes `munmap`.
+- **`mmap` — ask the OS directly for a page-aligned region. No heap overhead; the OS returns physical pages as they are touched. On Linux/macOS: `mmap(NULL, capacity, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0)`. Freeing becomes `munmap`.
 
 ## Test File 
 - To test the code I had Claude Code create a arena_test file to ensure that the arena is properly pushing and popping data. 
