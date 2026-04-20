@@ -53,7 +53,7 @@ With an implementation using mmap and unmmap, I have added more flexibility in t
 
  //Completed The current implementation bootstraps the arena with a single `malloc` call. The goal is to replace this with a lower-level memory source that doesn't rely on the C runtime heap at all. 
 
-- **`mmap` — ask the OS directly for a page-aligned region. No heap overhead; the OS returns physical pages as they are touched. On Linux/macOS: `mmap(NULL, capacity, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0)`. Freeing becomes `munmap`.
+- `mmap` — ask the OS directly for a page-aligned region. No heap overhead; the OS returns physical pages as they are touched. On Linux/macOS: `mmap(NULL, capacity, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0)`. Freeing becomes `munmap`.
 
 ## Test File 
 - To test the code I had Claude Code create a arena_test file to ensure that the arena is properly pushing and popping data. 
